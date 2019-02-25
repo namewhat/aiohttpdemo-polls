@@ -2,6 +2,7 @@ import time
 import asyncio
 
 from aiomysql import create_pool
+from sqlalchemy import select, and_
 from aiomysql.sa import create_engine
 from polls.models import question, choice
 from sqlalchemy.schema import CreateTable, DropTable
@@ -46,14 +47,15 @@ async def sample_data(engine):
             {'content': 'just fuck you', 'create_at': time.time()},
         ]
         for row in data:
-            await conn.execute(question.insert().values(**row))
-        data = [
-            {'content': 'fuck', 'votes': 1, 'qid': 1},
-            {'content': 'your', 'votes': 2, 'qid': 1},
-            {'content': 'wife', 'votes': 3, 'qid': 1},
-        ]
-        for row in data:
-            await conn.execute(choice.insert().values(**row))
+            return await conn.execute(question.insert().values(**row))
+
+        # data = [
+        #     {'content': 'fuck', 'votes': 1, 'qid': 1},
+        #     {'content': 'your', 'votes': 2, 'qid': 1},
+        #     {'content': 'wife', 'votes': 3, 'qid': 1},
+        # ]
+        # for row in data:
+        # return await conn.execute(choice.insert().values(*data))
 
 # 批量更新
 async def update(engine):
@@ -68,11 +70,25 @@ async def update(engine):
         ]
         )
 
+async def _select(engine):
+    async with engine.acquire() as conn:
+        sql = select([choice.c.id]).where(
+            and_(choice.c.id == 3, choice.c.content == 'fuck'))
+        rows = await conn.execute(sql)
+        print(await rows.fetchall())
+        # return await rows.first()
+
 async def main(loop):
     engine = await init_engine(loop)
-    await create_tables(engine)
-    await sample_data(engine)
+    # print(getattr(choice.c, 'qid'))
+    # await create_tables(engine)
+    r = await sample_data(engine)
+    # print(await r.first())
+    # print(r.rowcount)
+    # print(r.lastrowid)
+    # await _select(engine)
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main(loop))
+    loop.close()

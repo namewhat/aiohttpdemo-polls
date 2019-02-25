@@ -1,5 +1,6 @@
 from sqlalchemy import (MetaData, Table, Column,
                         ForeignKey, Integer, String, Date)
+from sqlalchemy.orm import mapper
 from aiomysql.sa import create_engine
 
 
@@ -11,6 +12,19 @@ question = Table(
     Column('id', Integer, primary_key=True, autoincrement=True),
     Column('content', String(200), nullable=False),
     Column('create_at', String(30), nullable=False))
+
+
+class Question:
+
+    def __init__(self, id_, content, create_at):
+        self.id = id_
+        self.content = content
+        self.create_at = create_at
+
+    def __repr__(self):
+        return "%s(%r,%r)" % (self.__class__.name, self.id, self.name)
+
+mapper(Question, question)
 
 choice = Table(
     'choice', meta,
